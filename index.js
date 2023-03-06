@@ -25,21 +25,32 @@ async function run() {
     const productsCollection = client.db('parlour_server').collection('products')
     console.log("DB connected")
 
-    //--------------------Services------------- 
+    //--------------------Services-------------// 
     //Post Method->Add Service 
 
     app.post('/addservice', async (req, res) => {
       const services = req.body;
       const result = await servicesCollection.insertOne(services);
-      console.log(result)
+
       res.send(result)
     })
 
     //Get method
     app.get('/services', async (req, res) => {
+      console.log(req.query)
       const query = {}
-      const serviceOptions = await servicesCollection.find(query).toArray();
-      res.send(serviceOptions);
+      const page = req.query.page;
+      const size = parseInt(req.query.size);
+      const count = await servicesCollection.find(query).count()
+      let serviceOptions;
+
+      if (page) {
+        serviceOptions = await servicesCollection.find(query).skip(page * size).limit(size).toArray()
+      } else {
+        serviceOptions = await servicesCollection.find(query).toArray();
+      }
+
+      res.send({ count, serviceOptions });
 
     })
 
@@ -52,15 +63,41 @@ async function run() {
 
     })
 
-    //---------- Prodcuts-----------
+    //---------- Prodcuts-----------//
     //Post method
     app.post('/addproduct', async (req, res) => {
       const products = req.body;
       const result = await productsCollection.insertOne(products);
-      console.log(result)
+
       res.send(result)
     })
 
+    //get method
+    app.get('/products', async (req, res) => {
+      const query = {}
+      const page = req.query.page;
+      const size = parseInt(req.query.size);
+      const count = await productsCollection.find(query).count()
+       
+      let products;
+
+      if(page){
+              products=await productsCollection.find(query).skip(page * size).limit(size).toArray()
+      }else{
+         products = await productsCollection.find(query).toArray();
+      }
+
+      res.send({count,products})
+    })
+
+    //Delete Method
+
+    app.delete('/products/:id', async (req, res) => {
+      const id = req.params.id;
+      const deleteId = { _id: new ObjectId(id) }
+      const result = await productsCollection.deleteOne(deleteId)
+      res.send(result)
+    })
 
 
   } finally { }
